@@ -54,6 +54,29 @@ router.post("/addpackage", async (req, res) => {
   }
 });
 
+// delete package___________________________________________
+router.delete("/deletePackage/:id", async (req, res) => {
+  try
+  {
+    const package_id = req.params.id
+    if(package_id !== null)
+    {
+      const result = await DELETE3(`DELETE FROM package WHERE id = ${package_id}`);
+      if(result)
+      {
+        res.send({type:"success", message:"package deleted"});
+      }
+    }
+    else
+    {
+      res.send({type:"error", message:'package not found'});
+    }
+  }
+  catch(error){
+    res.status(500).send("Error deleting packages");
+  }
+});
+
 // ADMIN & USERS___________________________________________
 router.get("/getallpackages", async (req, res) => {
   try {
