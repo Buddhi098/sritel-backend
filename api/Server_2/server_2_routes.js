@@ -17,6 +17,7 @@ const {
 
 const express = require("express");
 const router = express.Router();
+const { notification } = require("../../include/NodemailerConfig");
 
 //ADMIN___________________________________________
 router.post("/addpackage", async (req, res) => {
@@ -174,39 +175,44 @@ router.post("/activate-package", async (req, res) => {
   expiration_date.setMonth(activated_date.getMonth() + 1); // Example: 1 month from activation date
 
   // Insert the package activation directly
-  QUERY3(
-    "INSERT INTO user_package(user_id, package_id, activated_date, expiration_date) VALUES('" +
-      user_id +
-      "','" +
-      package_id +
-      "','" +
-      activated_date.toISOString() + // Ensure dates are in the correct format
-      "','" +
-      expiration_date.toISOString() +
-      "')"
-  )
-    .then((result) => {
+  try {
+      await QUERY3(`INSERT INTO user_package(user_id, package_id, activated_date, expiration_date) VALUES('${user_id}', '${package_id}', '${activated_date.toISOString()}', '${expiration_date.toISOString()}')`);
+      
+      const find_package = await SELECT_WHERE3("package", "id", package_id);
+      const email = (await SELECT_WHERE("user", "id", user_id))[0].email;
+
+      const package_name = find_package[0].name;
+      const package_description = find_package[0].description;
+      const package_data = find_package[0].data_limit;
+      const package_voice = find_package[0].voice_limit;
+      const package_sms = find_package[0].sms_limit;
+      const package_price = find_package[0].price;
+
+      await notification(email, package_name, package_description, package_data, package_voice, package_sms, package_price);
+      
       res.send({ type: "success", message: "Package activated successfully!" });
-    })
-    .catch((error) => {
+  } catch (error) {
       console.error(error);
       res.send({
-        type: "error",
-        message: "Error occurred while activating package!",
+          type: "error",
+          message: "Error occurred while activating package!",
       });
-    });
+  }
 });
+
 
 router.get("/user-packages", async (req, res) => {
   const user_id = req.query.user_id; // Assuming user_id is passed as a query parameter
+  const package_id = req.query.package_id;
 
-  QUERY3(
-    `SELECT up.*, p.* FROM user_package up
+  QUERY3(`SELECT up.*, p.* FROM user_package up
          JOIN package p ON up.package_id = p.id
          WHERE up.user_id = '${user_id}' AND up.expiration_date > NOW()`
   )
-    .then((result) => {
+    .then((result) => 
+    {
       res.send({ type: "success", data: result });
+      
     })
     .catch((error) => {
       console.error(error);
