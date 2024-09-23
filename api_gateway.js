@@ -1,4 +1,3 @@
-// gateway.js
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const cors = require('cors');
@@ -12,7 +11,7 @@ const packageService = 'http://localhost:5002';
 
 // Middleware to log incoming requests
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
 });
 
@@ -23,36 +22,36 @@ app.get('/health', (req, res) => {
 
 // Routes to different microservices
 app.use(
-  '/users/**',
+  '/users',
   createProxyMiddleware({
     target: userService,
     changeOrigin: true,
     pathRewrite: {
-      '^/users': '', // Strips only '/users' from the forwarded request, keeping '/api/registeruser'
+      '^/users': '',
     },
     onProxyReq: (proxyReq, req, res) => {
-      console.log(`Redirecting to: ${userService}${req.url}`);
+      console.log(`Redirecting to: ${userService}${proxyReq.path}`);
     },
   })
 );
 
 app.use(
-  '/package/**',
+  '/package',
   createProxyMiddleware({
     target: packageService,
     changeOrigin: true,
     pathRewrite: {
-      '^/package': '', // Strips only '/package' from the forwarded request
+      '^/package': '',
     },
     onProxyReq: (proxyReq, req, res) => {
-      console.log(`Redirecting to: ${packageService}${req.url}`);
+      console.log(`Redirecting to: ${packageService}${proxyReq.path}`);
     },
   })
 );
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error(err.message);
+  console.error(`${new Date().toISOString()} - Error:`, err.message);
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
