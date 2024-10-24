@@ -214,6 +214,29 @@ router.post("/addtobill", async (req, res) => {
   }
 });
 
+router.post("/removeFromBill", async (req, res) => 
+{
+  try
+  {
+    const package_id = req.body.package_id;
+    const user_id = req.body.user_id;
+
+    const delete_result = await DELETE3(`DELETE FROM user_bill WHERE package_id = '${package_id}' AND user_id = '${user_id}'`);
+    if (delete_result.affectedRows > 0) 
+    {
+      res.send({ type: "success", message: "Package removed from the bill successfully" });
+    } else {
+      res.status(404).send({ type: "error", message: "Package or user not found in the bill" });
+    }
+
+  }
+  catch(error)
+  {
+    console.error("Error processing request:", error);
+    res.status(500).send({ type: "error", message: "Internal server error" });
+  }
+});
+
 router.post("/getTotalPaid", async (req, res) => {
   try {
     const user_id = req.body.user_id;
@@ -223,15 +246,15 @@ router.post("/getTotalPaid", async (req, res) => {
       `SELECT * FROM user_bill WHERE user_id = '${user_id}' AND paid_unpaid = '${paid_unpaid}'`
     );
 
-    if (result.length !== 0) {
-      const totalPrice = result.reduce(
-        (sum, row) => sum + parseFloat(row.price),
-        0
-      );
+    if (result.length !== 0) 
+    {
+      const totalPrice = result.reduce((sum, row) => sum + parseFloat(row.price),0);
       console.log({ Total: totalPrice });
       console.log(result);
       res.send({ result, totalPrice });
-    } else {
+    } 
+    else 
+    {
       res.send({ type: "error", message: "No any packages you added" });
     }
   } catch (error) {
